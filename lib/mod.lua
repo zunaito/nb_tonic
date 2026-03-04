@@ -62,10 +62,6 @@ end
 
 ---------------- utils ----------------
 
-local function linsig(k, x)
-	return (1 / (1 + math.exp(-k * (x - 0.5))))
-end
-
 local function round_form(param, quant, form)
   return(util.round(param, quant)..form)
 end
@@ -182,7 +178,7 @@ end
 ---------------- params ----------------
 
 local function add_params()
-  params:add_group("nb_tonic_group", "tonic", ((NUM_VOICES * 26) + 17))
+  params:add_group("nb_tonic_group", "tonic", ((NUM_VOICES * 26) + 18))
   params:hide("nb_tonic_group")
   
   params:add_separator("nb_tonic_kits", "tonic kit")
@@ -193,19 +189,21 @@ local function add_params()
   params:add_trigger("nb_tonic_save_kit", "<< save")
   params:set_action("nb_tonic_save_kit", function() tx.enter(save_kit, current_kit)  end)
    
-  params:add_separator("nb_tonic_globals", "globals")
+  params:add_separator("nb_tonic_settings", "settings")
 
   params:add_control("nb_tonic_global_level", "main level", controlspec.new(0, 1, "lin", 0, 1), function(param) return round_form(param:get() * 100, 1, "%") end)
   params:set_action("nb_tonic_global_level", function(val) set_main_amp(val) end)
 
-  params:add_control("nb_tonic_global_cutoff", "lpf cutoff", controlspec.new(20, 20000, "exp", 0, 20000), function(param) return round_form(param:get(), 1, "hz") end)
-  params:set_action("nb_tonic_global_cutoff", function(val) set_cutoff(val) end)
-  
-  params:add_control("nb_tonic_global_resonance", "lpf rez", controlspec.new(0, 1, "lin", 0, 0), function(param) return round_form(param:get() * 100, 1, "%") end)
-  params:set_action("nb_tonic_global_resonance", function(val) set_resonance(val) end)
-
   params:add_number("nb_tonic_base", "base note", 0, 11, 0, function(param) return mu.note_num_to_name(param:get(), false) end)
   params:set_action("nb_tonic_base", function(val) base_note = val end)
+
+  params:add_separator("nb_tonic_filter", "global lpf")
+
+  params:add_control("nb_tonic_global_cutoff", "cutoff", controlspec.new(20, 20000, "exp", 0, 20000), function(param) return round_form(param:get(), 1, "hz") end)
+  params:set_action("nb_tonic_global_cutoff", function(val) set_cutoff(val) end)
+  
+  params:add_control("nb_tonic_global_resonance", "resonance", controlspec.new(0, 1, "lin", 0, 0), function(param) return round_form(param:get() * 100, 1, "%") end)
+  params:set_action("nb_tonic_global_resonance", function(val) set_resonance(val) end)
 
   params:add_separator("nb_tonic_voice", "voice")
 
@@ -217,11 +215,11 @@ local function add_params()
     params:set_action("nb_tonic_choke_group_"..i, function(val) choke[i] = val - 1 end)
   end
 
-  params:add_binary("nb_tonic_trig", "trig voice >>")
+  params:add_trigger("nb_tonic_trig", "trig voice >>")
   params:set_action("nb_tonic_trig", function() trig_tonic(selected_voice - 1, 1) end)
 
   params:add_trigger("nb_tonic_load_voice", "> load voice")
-  params:set_action("nb_tonic_load_voice", function() fs.enter(vox_path, function(path) load_voice(path) end) end)
+  params:set_action("nb_tonic_load_voice", function() fs.enter(vox_path, load_voice) end)
 
   params:add_trigger("nb_tonic_save_voice", "< save voice")
   params:set_action("nb_tonic_save_voice", function() tx.enter(save_voice, current_vox[selected_voice]) end)
@@ -314,7 +312,7 @@ local function add_params()
   end
   -- load default kit after params
   clock.run(function()
-    clock.sleep(0.5)
+    clock.sleep(0.1)
     load_kit(default_kit)
   end)
 end
